@@ -1,13 +1,14 @@
- 
 from fastapi import FastAPI, Depends
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from fastapi.openapi.utils import get_openapi
+import os
 
 app = FastAPI()
 
-# ✅ SQLite Database (Simple for Testing)
-DATABASE_URL = "sqlite:///./test.db"
+# ✅ SQLite Database (or use PostgreSQL if configured)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -32,7 +33,7 @@ def get_db():
 # ✅ Home Route
 @app.get("/")
 def home():
-    return {"message": "FastAPI is running!"}
+    return {"message": "FastAPI is running with OpenAPI support!"}
 
 # ✅ Save Chat Endpoint
 @app.post("/save_chat/")
@@ -48,17 +49,7 @@ def get_chats(db: Session = Depends(get_db)):
     chats = db.query(ChatMessage).all()
     return {"history": [{"user_message": c.user_message, "bot_response": c.bot_response} for c in chats]}
 
-
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
-
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message": "FastAPI is running with OpenAPI support!"}
-
-# ✅ Fix OpenAPI Schema
+# ✅ Custom OpenAPI Schema Fix for Custom GPT
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -73,4 +64,3 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
-
