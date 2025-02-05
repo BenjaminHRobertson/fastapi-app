@@ -47,3 +47,30 @@ def save_chat(user_message: str, bot_response: str, db: Session = Depends(get_db
 def get_chats(db: Session = Depends(get_db)):
     chats = db.query(ChatMessage).all()
     return {"history": [{"user_message": c.user_message, "bot_response": c.bot_response} for c in chats]}
+
+
+from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
+
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"message": "FastAPI is running with OpenAPI support!"}
+
+# ✅ Fix OpenAPI Schema
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="FastAPI GPT API",
+        version="1.0",
+        description="API for saving and retrieving chat messages",
+        routes=app.routes,
+    )
+    openapi_schema["servers"] = [{"url": "https://fastapi-app-kswn.onrender.com"}]  # Replace with your actual Render URL
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
